@@ -12,7 +12,6 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   int selectedGender = 1;
 
-  // Controllers
   final TextEditingController usernameC = TextEditingController();
   final TextEditingController emailC = TextEditingController();
   final TextEditingController passwordC = TextEditingController();
@@ -25,16 +24,16 @@ class _RegisterPageState extends State<RegisterPage> {
         title: const Text(
           "Register Page",
           style: TextStyle(
-            color: Color(0xFF6A1B9A), // playful purple
-            fontSize: 35, // match LoginPage
+            color: Color(0xFF6A1B9A),
+            fontSize: 35,
           ),
         ),
-        backgroundColor: const Color(0xFFA7FFEB), // solid mint aqua
+        backgroundColor: const Color(0xFFA7FFEB),
         centerTitle: true,
         elevation: 0,
       ),
       body: Container(
-        color: const Color(0xFFA7FFEB), // solid background
+        color: const Color(0xFFA7FFEB),
         child: Center(
           child: SingleChildScrollView(
             child: Padding(
@@ -42,7 +41,6 @@ class _RegisterPageState extends State<RegisterPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  // USERNAME
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -51,7 +49,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         child: Text(
                           'Username:',
                           style: TextStyle(
-                            fontSize: 23, // match LoginPage labels
+                            fontSize: 23, 
                             color: Color(0xFF1565C0),
                           ),
                         ),
@@ -61,7 +59,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // EMAIL
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -80,7 +77,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // PASSWORD
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -99,7 +95,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // AGE
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -118,7 +113,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // GENDER
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -154,7 +148,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         "Female",
                         style: TextStyle(
                           fontSize: 23,
-                          color: Color(0xFFE91E63), // hot pink
+                          color: Color(0xFFE91E63),
                         ),
                       ),
                     ],
@@ -165,8 +159,8 @@ class _RegisterPageState extends State<RegisterPage> {
                   // REGISTER BUTTON
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF7043), // bright orange
-                      foregroundColor: Colors.white, // white text
+                      backgroundColor: const Color(0xFFFF7043),
+                      foregroundColor: Colors.white,
                     ),
                     onPressed: () {
                       User newUser = User(
@@ -187,14 +181,13 @@ class _RegisterPageState extends State<RegisterPage> {
                       padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                       child: Text(
                         "REGISTER",
-                        style: TextStyle(fontSize: 22), // match LoginPage button
+                        style: TextStyle(fontSize: 22),
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 20),
 
-                  // Login Link
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -205,7 +198,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     child: const Text(
                       "Already have an account? Login",
                       style: TextStyle(
-                        fontSize: 18, // match LoginPage link
+                        fontSize: 18,
                         color: Color(0xFFE91E63),
                         decoration: TextDecoration.underline,
                       ),
@@ -221,7 +214,6 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 }
 
-// TextField widget
 class MyTextField extends StatelessWidget {
   final String hint;
   final TextEditingController controller;
@@ -250,12 +242,12 @@ class MyTextField extends StatelessWidget {
           ),
           hintText: hint,
           hintStyle: TextStyle(
-            fontSize: 21, // match LoginPage hints
+            fontSize: 21,
             color: hint == 'Email'
-                ? const Color(0xFF1976D2) // bright blue
+                ? const Color(0xFF1976D2)
                 : hint == 'Password'
-                ? const Color(0xFF43A047) // fresh green
-                : const Color(0xFF6A1B9A), // purple for Username/Age
+                ? const Color(0xFF43A047)
+                : const Color(0xFF6A1B9A),
           ),
         ),
       ),
