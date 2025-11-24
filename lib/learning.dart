@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // needed for inputFormatters
-
+import 'quiz.dart';
 class LearningPage extends StatefulWidget {
   const LearningPage({super.key});
 
@@ -180,6 +180,22 @@ class _LearningPageState extends State<LearningPage> {
                   fontSize: 24, // emphasis, matches LoginPage bold style
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF6A1B9A), // purple result text
+                ),
+              ),ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF7043), // orange
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const QuizPage()),
+                  );
+                },
+                child: const Text(
+                  "go to quiz",
+                  style: TextStyle(fontSize: 22),
                 ),
               ),
             ],
