@@ -1,7 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'register.dart';
 import 'learning.dart';
-import 'users.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,31 +15,83 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  void loginUser() {
-    String email = emailController.text.trim();
-    String password = passwordController.text.trim();
+  bool isLoading = false;
 
-    bool found = false;
+  final String apiUrl = "http://eliehabka04.atwebpages.com/api/login.php";
 
-    for (var user in Users) {
-      if (user.email == email && user.password == password) {
-        found = true;
-        break;
-      }
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  void showMsg(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg)),
+    );
+  }
+
+  Future<void> loginUser() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      showMsg("Email and password are required");
+      return;
     }
 
-    if (found) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const LearningPage()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Incorrect email or password!"),
-          backgroundColor: Color(0xFFF06292), // softer pinkish red
-        ),
-      );
+    setState(() => isLoading = true);
+
+    final Map<String, dynamic> body = {
+      "email": email,
+      "password": password,
+      "key": "password",
+    };
+
+    try {
+      final response = await http
+          .post(
+        Uri.parse(apiUrl),
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: jsonEncode(body),
+      )
+          .timeout(const Duration(seconds: 15));
+
+      if (!mounted) return;
+
+      final dynamic decoded = jsonDecode(response.body);
+
+      if (response.statusCode == 200 &&
+          decoded is Map &&
+          decoded["success"] == true) {
+
+        // ✅ Get the user ID from API response
+        int userId = decoded["user_id"] ?? 0;
+
+        showMsg("Login successful ✅");
+
+        // ✅ Pass userId to LearningPage
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LearningPage(userId: userId),
+          ),
+        );
+      } else {
+        final msg = (decoded is Map && decoded["message"] != null)
+            ? decoded["message"].toString()
+            : "Login failed";
+        showMsg(msg);
+      }
+    } catch (e) {
+      showMsg("Connection error: $e");
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -49,17 +102,16 @@ class _LoginPageState extends State<LoginPage> {
         title: const Text(
           "Welcome To Fun With Math ",
           style: TextStyle(
-            color: Color(0xFF6A1B9A), // playful purple
+            color: Color(0xFF6A1B9A),
             fontSize: 35,
           ),
         ),
-        backgroundColor: const Color(0xFFA7FFEB), // solid mint aqua
-        // foregroundColor: Colors.black,
+        backgroundColor: const Color(0xFFA7FFEB),
         centerTitle: true,
         elevation: 0,
       ),
       body: Container(
-        color: const Color(0xFFA7FFEB), // solid background (no gradient)
+        color: const Color(0xFFA7FFEB),
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -76,7 +128,7 @@ class _LoginPageState extends State<LoginPage> {
                         'Email:',
                         style: TextStyle(
                           fontSize: 23,
-                          color: Color(0xFF1565C0), // strong blue
+                          color: Color(0xFF1565C0),
                         ),
                       ),
                     ),
@@ -84,16 +136,17 @@ class _LoginPageState extends State<LoginPage> {
                       width: 200,
                       child: TextField(
                         controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
                         style: const TextStyle(
                           fontSize: 21,
                           color: Colors.black,
                         ),
-                        decoration: InputDecoration(
-                          border: const OutlineInputBorder(),
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
                           hintText: 'Email',
-                          hintStyle: const TextStyle(
+                          hintStyle: TextStyle(
                             fontSize: 21,
-                            color: Color(0xFF1976D2), // stronger bright blue
+                            color: Color(0xFF1976D2),
                           ),
                         ),
                       ),
@@ -113,7 +166,7 @@ class _LoginPageState extends State<LoginPage> {
                         'Password:',
                         style: TextStyle(
                           fontSize: 23,
-                          color: Color(0xFF2E7D32), // strong green
+                          color: Color(0xFF2E7D32),
                         ),
                       ),
                     ),
@@ -125,12 +178,12 @@ class _LoginPageState extends State<LoginPage> {
                           fontSize: 21,
                           color: Colors.black,
                         ),
-                        decoration: InputDecoration(
-                          border: const OutlineInputBorder(),
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
                           hintText: 'Password',
-                          hintStyle: const TextStyle(
+                          hintStyle: TextStyle(
                             fontSize: 21,
-                            color: Color(0xFF43A047), // stronger fresh green
+                            color: Color(0xFF43A047),
                           ),
                         ),
                         obscureText: true,
@@ -144,13 +197,23 @@ class _LoginPageState extends State<LoginPage> {
                 // LOGIN BUTTON
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF7043), // bright orange
-                    foregroundColor: Colors.white, // white text
+                    backgroundColor: const Color(0xFFFF7043),
+                    foregroundColor: Colors.white,
                   ),
-                  onPressed: loginUser,
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                    child: Text(
+                  onPressed: isLoading ? null : loginUser,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 40, vertical: 15),
+                    child: isLoading
+                        ? const SizedBox(
+                      height: 22,
+                      width: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        color: Colors.white,
+                      ),
+                    )
+                        : const Text(
                       "LOGIN",
                       style: TextStyle(fontSize: 22),
                     ),
@@ -164,15 +227,14 @@ class _LoginPageState extends State<LoginPage> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                          builder: (context) => const RegisterPage()),
+                      MaterialPageRoute(builder: (_) => const RegisterPage()),
                     );
                   },
                   child: const Text(
                     "Don't have an account? Register",
                     style: TextStyle(
                       fontSize: 18,
-                      color: Color(0xFFE91E63), // hot pink
+                      color: Color(0xFFE91E63),
                       decoration: TextDecoration.underline,
                     ),
                   ),

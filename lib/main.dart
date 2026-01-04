@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
       title: 'Flutter App',
 
       // First screen of the app
-      home: const QuizPage(),
+      home: const LoginPage(),
 
     );
   }

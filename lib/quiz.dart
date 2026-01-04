@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'learning.dart';
+
 class Question {
   final String text;
   final String answer;
@@ -10,7 +13,9 @@ class Question {
 }
 
 class QuizPage extends StatefulWidget {
-  const QuizPage({super.key});
+  final int userId;
+
+  const QuizPage({super.key, required this.userId});
 
   @override
   State<QuizPage> createState() => _QuizPageState();
@@ -20,6 +25,7 @@ class _QuizPageState extends State<QuizPage> {
   late List<Question> questions;
   int score = 0;
   bool submitted = false;
+  List<dynamic> topQuizzes = [];
 
   @override
   void initState() {
@@ -54,18 +60,38 @@ class _QuizPageState extends State<QuizPage> {
     ];
   }
 
-
-  void submitQuiz() {
+  void submitQuiz() async {
     int tempScore = 0;
     for (var q in questions) {
       if (q.controller.text.trim() == q.answer) {
         tempScore++;
       }
     }
+
     setState(() {
       score = tempScore;
       submitted = true;
     });
+
+    await sendResult(widget.userId, tempScore);
+  }
+
+  Future<void> sendResult(int userId, int score) async {
+    try {
+      final response = await http.post(
+        Uri.parse("http://eliehabka04.atwebpages.com/api/insert-quiz.php"),
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: json.encode({
+          "user_id": userId,
+          "score": score,
+        }),
+      );
+    } catch (e) {
+      // Silently handle error
+    }
   }
 
   void newQuiz() {
@@ -74,6 +100,24 @@ class _QuizPageState extends State<QuizPage> {
       score = 0;
       submitted = false;
     });
+  }
+
+  Future<void> fetchTopQuizzes() async {
+    try {
+      final response = await http.get(
+        Uri.parse("http://eliehabka04.atwebpages.com/api/get-top10-quiz.php?user_id=${widget.userId}"),
+        headers: {"Accept": "application/json"},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          topQuizzes = data;
+        });
+      }
+    } catch (e) {
+      // Silently handle error
+    }
   }
 
   @override
@@ -95,7 +139,6 @@ class _QuizPageState extends State<QuizPage> {
         color: const Color(0xFFA7FFEB),
         child: Column(
           children: [
-            // Score display at the top
             if (submitted)
               Padding(
                 padding: const EdgeInsets.all(12),
@@ -104,17 +147,15 @@ class _QuizPageState extends State<QuizPage> {
                   style: const TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF2E7D32), // strong green
+                    color: Color(0xFF2E7D32),
                   ),
                 ),
               ),
-
             Expanded(
-              child: ListView.builder(
-                itemCount: questions.length,
-                itemBuilder: (context, index) {
-                  final q = questions[index];
-                  return Card(
+              child: ListView(
+                children: [
+                  // Quiz questions
+                  ...questions.map((q) => Card(
                     color: Colors.white,
                     margin: const EdgeInsets.all(12),
                     child: Padding(
@@ -154,58 +195,171 @@ class _QuizPageState extends State<QuizPage> {
                         ],
                       ),
                     ),
-                  );
-                },
-              ),
-            ),
+                  )),
+                  // Buttons
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFF7043),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 30, vertical: 15),
+                          ),
+                          onPressed: submitQuiz,
+                          child: const Text("SUBMIT QUIZ",
+                              style: TextStyle(fontSize: 22)),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF6A1B9A),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 30, vertical: 15),
+                          ),
+                          onPressed: newQuiz,
+                          child: const Text("NEW QUIZ",
+                              style: TextStyle(fontSize: 22)),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFF7043),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 30, vertical: 15),
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => LearningPage(userId: widget.userId),
+                              ),
+                            );
+                          },
+                          child: const Text("Back to Learning",
+                              style: TextStyle(fontSize: 22)),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1565C0),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 30, vertical: 15),
+                          ),
+                          onPressed: fetchTopQuizzes,
+                          child: const Text("TOP 10 QUIZZES",
+                              style: TextStyle(fontSize: 22)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Leaderboard
+                  if (topQuizzes.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "My Top 10 Quizzes",
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1565C0),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ...topQuizzes.asMap().entries.map((entry) {
+                            int index = entry.key;
+                            var quiz = entry.value;
 
-            // Buttons at the bottom
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF7043),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                            // Determine medal/position
+                            String position = "";
+                            Color positionColor = const Color(0xFF1565C0);
+
+                            if (index == 0) {
+                              position = "🥇";
+                              positionColor = const Color(0xFFFFD700); // Gold
+                            } else if (index == 1) {
+                              position = "🥈";
+                              positionColor = const Color(0xFFC0C0C0); // Silver
+                            } else if (index == 2) {
+                              position = "🥉";
+                              positionColor = const Color(0xFFCD7F32); // Bronze
+                            } else {
+                              position = "#${index + 1}";
+                            }
+
+                            return Card(
+                              color: Colors.white,
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              elevation: index < 3 ? 4 : 2,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  children: [
+                                    // Position
+                                    SizedBox(
+                                      width: 50,
+                                      child: Text(
+                                        position,
+                                        style: TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                          color: positionColor,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    // User info and score
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          // Username (if available)
+                                          if (quiz['name'] != null)
+                                            Text(
+                                              quiz['name'],
+                                              style: const TextStyle(
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF1565C0),
+                                              ),
+                                            ),
+                                          const SizedBox(height: 4),
+                                          // Score
+                                          Text(
+                                            "Score: ${quiz['score']}",
+                                            style: const TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF6A1B9A),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          // Date
+                                          Text(
+                                            "Date: ${quiz['date']}",
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ],
+                      ),
                     ),
-                    onPressed: submitQuiz,
-                    child: const Text(
-                      "SUBMIT QUIZ",
-                      style: TextStyle(fontSize: 22),
-                    ),
-                  ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6A1B9A),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                    ),
-                    onPressed: newQuiz,
-                    child: const Text(
-                      "NEW QUIZ",
-                      style: TextStyle(fontSize: 22),
-                    ),
-                  ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF7043), // orange
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const LearningPage()),
-                      );
-                    },
-                    child: const Text(
-                      "Back to Learning",
-                      style: TextStyle(fontSize: 22),
-                    ),
-                  ),
                 ],
               ),
             ),
