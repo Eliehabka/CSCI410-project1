@@ -66,14 +66,12 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => isLoading = true);
 
     final Map<String, dynamic> body = {
-      "user_id": 0,
       "name": usernameC.text.trim(),
       "email": emailC.text.trim(),
       "password": passwordC.text.trim(),
       "age": int.tryParse(ageC.text.trim()) ?? 0,
       "gender": selectedGender == 1 ? "Male" : "Female",
-      // If your PHP checks an API key, add it like this:
-      // "key": "YOUR_API_KEY",
+
     };
 
     try {
@@ -81,7 +79,7 @@ class _RegisterPageState extends State<RegisterPage> {
         Uri.parse(apiUrl),
         headers: {
           "Content-Type": "application/json",
-          "Accept": "text/plain",
+          "Accept": "application/json",
         },
         body: jsonEncode(body),
       );
@@ -89,11 +87,22 @@ class _RegisterPageState extends State<RegisterPage> {
       if (!mounted) return;
 
       if (response.statusCode == 200) {
-        final msg = response.body.trim();
-        showMsg("Server: $msg");
+        // Parse JSON response
+        final data = jsonDecode(response.body);
+        final success = data["success"] ?? false;
+        final message = data["message"] ?? "Unknown error";
+
+        showMsg(message);
 
         // If register success, go to login
-        if (msg.toLowerCase().contains("record added")) {
+        if (success) {
+          // Clear fields
+          usernameC.clear();
+          emailC.clear();
+          passwordC.clear();
+          ageC.clear();
+
+          // Navigate to login page
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => const LoginPage()),
